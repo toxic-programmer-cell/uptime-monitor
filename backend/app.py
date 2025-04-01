@@ -33,7 +33,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default = True)
     subscription_plan = db.Column(db.String(50), nullable = True)
     subscription_purchased = db.Column(db.DateTime, nullable = True)
-    subscription_cancelled = db.Column(db.Boolean, default = False)
+    subscription_cancelled = db.Column(db.DateTime, nullable = True)
     subscription_end = db.Column(db.DateTime, nullable = True)
     websites = db.relationship('Website', backref = 'user', lazy = True)
     message = db.relationship('Message', backref = 'user', lazy = True)
@@ -378,6 +378,112 @@ def cancel_subscription():
         db.session.rollback()
         return jsonify({'message': f'Failed to cancel subscription: {str(e)}'}), 500
 
+#!Routs for website monitoring
+#*Add Website
+@app.route('/websites', methods = ['POST'])
+@jwt_required()
+def add_website():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user.is_active:
+        return jsonify({'message': 'User is blocked'}), 403
+    if not user.subscription_plan or user.subscription_end < datetime.utcnow():
+        return jsonify({'message': 'No active subscription'}), 403
+    
+    if len (user.websites) >= 1:
+        return jsonify({'message': 'Website limit reached'}), 400
+    
+    data = request.get_json()
+    url = data.get('url')
+    if not url:
+        return jsonify({'message': 'URL is required'}), 400
+    
+    website = Website(url = url, user_id = int(user_id))
+    try:
+        db.session.add(website)
+        db.session.commit()
+        return jsonify({'message': 'Website added successfully', 'website_id':website.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to add website: {str(e)}'}), 500
+    
+#*View Website
+@app.route('/websites', methods = ['GET'])
+@jwt_required()
+def get_websites():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user.is_active:
+        return jsonify({'message': 'User is blocked'}), 403
+    
+    websites = [
+        {
+            'id': website.id,
+            'url': website.url,
+            'status': website.status,
+            'response_time': website.response_time,
+            'uptime_percentage': website.uptime_percentage
+        } for website in user.websites
+    ]
+    return jsonify({'message': 'Website retrived', 'website': websites}), 200
+
+#*Check Website
+@app.route('/website/check', methods = ['GET'])
+@jwt_required()
+def check_website():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user.is_active:
+        return jsonify({'message': 'User is blocked'}), 403
+    if not user.websites:
+        return jsonify({'message': 'No website to check'}), 404
+    
+    results = []
+    for website in user.websites:
+        try:
+            start_time = datetime.utcnow()
+            response = request.get(website.url, timeout = 5)
+            response_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+
+            status = response.status_code == 200
+            check = Check(
+                website_id = website.id,
+                status = status,
+                response_time = response_time
+            )
+            db.session.add(check)
+
+            website.status = status
+            website.response_time = response_time
+            checks = Check.query.filter_by(website_id = website.id).all()
+            uptime_checks = len([c for c in checks if c.status])
+            website.uptime_percentage = (uptime_checks / len(check)) * 100 if checks else 100.0
+
+            results.append({
+                'url': website.url,
+                'status': 'online' if status else 'offline',
+                'response_time': website.response_time,
+                'uptime_percentage': website.uptime_percentage
+            })
+        except request.RequestException as e:
+            check = Check(
+                website_id = website.id,
+                status = False,
+                response_time = 0.0
+            )
+            db.session.add(check)
+            website.status = False
+            website.response_time = 0.0
+            website.uptime_percentage = 0.0 if not website.checks else (len([c for c in website.checks if c.status]) / len(website.checks)) * 100
+            results.append({
+                'url': website.url,
+                'status': 'offline',
+                'response_time': 0.0,
+                'error': str(e)
+            })
+
+        db.session.commit()
+        return jsonify({'message': 'Websites checked', 'result': results}), 200
 
 if __name__=='__main__':
     app.run(debug = True)
