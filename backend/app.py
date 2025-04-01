@@ -370,7 +370,10 @@ def cancel_subscription():
         user.subscription_plan = None
         user.subscription_end = None
         db.session.commit()
-        return jsonify({'message': 'Subscription cancelled successfully'}), 200
+        return jsonify({
+            'message': 'Subscription cancelled successfully',
+            'message': user.subscription_cancelled.isoformat(),
+            }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'Failed to cancel subscription: {str(e)}'}), 500
