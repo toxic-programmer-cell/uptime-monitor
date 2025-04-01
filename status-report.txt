@@ -1,0 +1,60 @@
+Website Uptime Monitoring Task: ❌:Not-Done,  ✅:Done,  📌:Pin/Steps
+
+📌Tech Stack :
+-Frontend: React JS (for the dashboard, user/admin interfaces, and help section).
+-Libraries: axios (API calls), recharts (charts), react-router-dom (navigation).
+-Backend: Python with Flask (for API, monitoring, user management).
+-Libraries: Flask-SQLAlchemy (database), Flask-JWT-Extended (authentication), requests (website checks), schedule (periodic monitoring).
+-Database: SQLite (development); PostgreSQL (production).
+-Hosting: Heroku (backend), Netlify (frontend).
+-Other Tools: Git/GitHub, VS Code.
+
+📌Step 1: Set Up Your Development Environment
+
+1.Verify Software:✅
+✅Node.js and npm: node --version (v22.13.1) and npm --version (11.1.0) (should be installed for React).
+✅Python: python --version .
+✅Git: git --version.(git version 2.47.0.windows.1)
+
+2.Create Project Folder:
+✅In Command Prompt: mkdir uptime-monitor && cd uptime-monitor.
+✅Initialize Git: git init.
+✅Create subfolders: mkdir frontend backend.
+
+
+📌Step 2: Build the Backend (Flask API)✅
+
+--We’ll start with the backend, as it handles user management, website monitoring, and the help section.
+
+1. Set Up the Flask Project
+✅Navigate to Backend:
+✅cd backend
+-Create a Virtual Environment:
+✅python -m venv venv
+✅Activate: venv\Scripts\activate (you’ll see (venv) in your prompt).
+-Install Dependencies:
+✅pip install flask flask-sqlalchemy flask-jwt-extended requests schedule
+✅Save: pip freeze > requirements.txt.
+
+
+2. Create the Flask App (app.py) ✅
+✅Initialize Flask app
+✅Configure the app
+✅Initialize database and JWT
+✅Database Models
+- User: Represents a user (admin or regular user) in the database.
+- Website: Represents a website to monitor.
+- Check: Stores the history of each website check.
+- Message: Stores help messages sent by users to the admin.
+✅Create database tables
+✅Helper function to check website status
+✅Background task to monitor websites
+✅Schedule monitoring every 5 minutes
+✅Run scheduler in a separate thread
+✅Routes for Authentication
+- /register: Allows users to register by sending a POST request with their details.
+- /login: Handles user and admin login.
+✅Routes for Admin
+- /admin/users: Allows the admin to see all users.✅
+- /admin/users (POST): Allows the admin to add a new user.✅
+- /admin/users/<user_id> (DELETE): Allows the admin to delete a user.✅

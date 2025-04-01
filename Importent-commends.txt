@@ -1,0 +1,19 @@
+📌export PATH=$PATH:/c/sqlite    ---temperary path Set
+📌python app.py      ---start server
+📌curl -X POST -H "Content-Type: application/json" -d '<DATA>' <URL>
+    {
+        curl → Command-line tool for HTTP requests
+
+        -X POST → Specifies a POST request
+
+        -H "Content-Type: application/json" → Sets the request header to JSON
+
+        -d '<DATA>' → Sends JSON data as the request body
+
+        <URL> → The API endpoint
+    }
+📌curl -X DELETE -H "Authorization: Bearer <TOKEN>" <URL>
+
+📌sqlite3 uptime.db
+    📌SELECT id, email, is_admin FROM user;   ---check avalible user in table
+    📌.exit
